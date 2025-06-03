@@ -48,62 +48,66 @@ monthly_income = income_df.groupby("Month")["Amount"].sum().reset_index()
 st.subheader("📅 Monthly Income Summary")
 st.bar_chart(monthly_income.set_index("Month"))
 
-# --- Expense Section (with editable Category dropdown) ---
+# --- Expense Section (manual per-row dropdowns) ---
 st.header("💸 Expense Overview")
 
 # Convert Date to datetime
 expense_df["Date"] = pd.to_datetime(expense_df["Date"])
 
-# Drop any pre‐existing Category column (optional)
+# If there’s an existing Category column in the sheet, drop it so we start fresh:
 if "Category" in expense_df.columns:
     expense_df = expense_df.drop(columns=["Category"])
 
-# Add blank Category column
+# Prepare a blank Category column to fill in:
 expense_df["Category"] = ""
 
-# Define dropdown options
+# Define the fixed list of expense categories:
 expense_categories = ["Fixed", "Variable", "Other"]
 
-# Use the “experimental” data editor so we can configure a SelectboxColumn for Category
-edited_expense_df = st.experimental_data_editor(
-    expense_df,
-    column_config={
-        "Category": st.column_config.SelectboxColumn(
-            "Category",                # label shown in the table
-            options=expense_categories, 
-            format_func=lambda x: x,   # no formatting needed
-            help="Choose Fixed / Variable / Other"
-        )
-    },
-    hide_index=True,
-    num_rows="dynamic"
-)
+# Now, for each row in expense_df, render a selectbox where the user chooses the category:
+st.write("**Assign a category to each expense:**")
+for idx, row in expense_df.iterrows():
+    # Build a label showing Date, Description, and Amount to identify the row
+    label = f"{row['Date'].date()} – {row['Description']} ($ {row['Amount']})"
+    choice = st.selectbox(
+        label,
+        options=[""] + expense_categories,
+        index=0, 
+        key=f"exp_{idx}"
+    )
+    # If the user picks a non-empty choice, store it in our DataFrame
+    if choice in expense_categories:
+        expense_df.at[idx, "Category"] = choice
 
-# Optionally save back to Google Sheet
+# After the loop, you have a full expense_df["Category"] column based on user picks
+st.subheader("📊 Your Categorized Expenses")
+st.dataframe(expense_df)
+
+# (Optional) Save back to Google Sheet when user clicks the button
 if st.button("Save Expense Categories to Sheet"):
     worksheet = sheet.worksheet("Expense_Log")
-    # Build values: header row + all data rows (as strings so gspread can push them)
-    values = [edited_expense_df.columns.to_list()] + edited_expense_df.fillna("").astype(str).values.tolist()
+    values = [expense_df.columns.to_list()] + expense_df.fillna("").astype(str).values.tolist()
     worksheet.clear()
     worksheet.update(values)
     st.success("✅ Categories saved back to Google Sheet!")
 
-# Filter by chosen category
+# Next, allow filtering by category as before
 category_filter = st.selectbox(
     "Filter Expense by Category",
     options=["All"] + expense_categories
 )
 if category_filter == "All":
-    to_show = edited_expense_df
+    to_show = expense_df
 else:
-    to_show = edited_expense_df[edited_expense_df["Category"] == category_filter]
+    to_show = expense_df[expense_df["Category"] == category_filter]
 
 st.subheader(f"📊 {category_filter} Expenses")
 st.dataframe(to_show)
 
-# --- Spending by Category Pie Chart using edited_expense_df ---
+# Finally, a pie chart of spending by category (ignoring blank rows)
 spend_by_cat = (
-    edited_expense_df.groupby("Category")["Amount"]
+    expense_df[expense_df["Category"] != ""]
+    .groupby("Category")["Amount"]
     .sum()
     .reset_index()
     .sort_values("Amount", ascending=False)
@@ -116,6 +120,7 @@ fig_expense = px.pie(
     hole=0.4
 )
 st.plotly_chart(fig_expense, use_container_width=True)
+
 # --- Debt Tracker Section ---
 st.header("📉 Debt Tracker")
 debts_df["Date"] = pd.to_datetime(debts_df["Date"])
