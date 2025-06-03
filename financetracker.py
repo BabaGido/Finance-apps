@@ -48,38 +48,59 @@ monthly_income = income_df.groupby("Month")["Amount"].sum().reset_index()
 st.subheader("📅 Monthly Income Summary")
 st.bar_chart(monthly_income.set_index("Month"))
 
-# --- Expense Section ---
+# --- Expense Section (with editable Category dropdown) ---
 st.header("💸 Expense Overview")
+
+# Convert Date to datetime
 expense_df["Date"] = pd.to_datetime(expense_df["Date"])
-st.dataframe(expense_df)
 
-# --- Categorize Expenses as Fixed/Variable/Other based on Description ---
-def categorize_expense(desc):
-    desc = str(desc).lower()
-    if any(keyword in desc for keyword in ["rent", "insurance", "car"]):
-        return "Fixed"
-    elif any(keyword in desc for keyword in ["gas", "grocery", "utilities", "internet"]):
-        return "Variable"
-    else:
-        return "Other"
+# Drop any pre‐existing Category column (optional)
+if "Category" in expense_df.columns:
+    expense_df = expense_df.drop(columns=["Category"])
 
-expense_df["Category"] = expense_df["Description"].apply(categorize_expense)
+# Add blank Category column
+expense_df["Category"] = ""
 
-# --- Interactive Dropdown Filter for Expenses ---
+# Define dropdown options
+expense_categories = ["Fixed", "Variable", "Other"]
+
+# Show data editor
+edited_expense_df = st.data_editor(
+    expense_df,
+    column_config={
+        "Category": st.column_config.SelectboxColumn(
+            "Category",
+            options=expense_categories,
+            default="Variable",
+        )
+    },
+    hide_index=True,
+    num_rows="dynamic"
+)
+
+# Optionally save back to Google Sheet
+if st.button("Save Expense Categories to Sheet"):
+    worksheet = sheet.worksheet("Expense_Log")
+    values = [edited_expense_df.columns.to_list()] + edited_expense_df.fillna("").astype(str).values.tolist()
+    worksheet.clear()
+    worksheet.update(values)
+    st.success("✅ Categories saved back to Google Sheet!")
+
+# Filter by chosen category
 category_filter = st.selectbox(
     "Filter Expense by Category",
-    options=["All"] + expense_df["Category"].unique().tolist()
+    options=["All"] + expense_categories
 )
 if category_filter == "All":
-    filtered_expenses = expense_df
+    to_show = edited_expense_df
 else:
-    filtered_expenses = expense_df[expense_df["Category"] == category_filter]
+    to_show = edited_expense_df[edited_expense_df["Category"] == category_filter]
 
 st.subheader(f"📊 {category_filter} Expenses")
-st.dataframe(filtered_expenses)
+st.dataframe(to_show)
 
-# --- Spending by Category Pie Chart ---
-spend_by_cat = expense_df.groupby("Category")["Amount"].sum().reset_index()
+# --- Spending by Category Pie Chart using edited_expense_df ---
+spend_by_cat = edited_expense_df.groupby("Category")["Amount"].sum().reset_index()
 fig_expense = px.pie(
     spend_by_cat,
     names="Category",
@@ -88,7 +109,6 @@ fig_expense = px.pie(
     hole=0.4
 )
 st.plotly_chart(fig_expense, use_container_width=True)
-
 # --- Debt Tracker Section ---
 st.header("📉 Debt Tracker")
 debts_df["Date"] = pd.to_datetime(debts_df["Date"])
