@@ -64,10 +64,13 @@ st.header("🏦 Account Balances")
 st.dataframe(accounts_df)
 
 # Net Worth Calculation
-try:
-    total_assets = accounts_df["Balance"].sum()
-    total_debts = debts_df["Balance"].sum()
-    net_worth = total_assets - total_debts
-    st.metric("📊 Net Worth", f"${net_worth:,.2f}")
-except Exception as e:
-    st.warning("Could not calculate net worth. Check data format.")
+# Example: Calculate net worth
+net_worth = accounts_df['Amount'].sum() - debts_df['Amount'].sum()
+st.metric("📈 Net Worth", f"${net_worth:,.2f}")
+#try:
+    #total_assets = accounts_df["Balance"].sum()
+    #total_debts = debts_df["Balance"].sum()
+    #net_worth = total_assets - total_debts
+    #st.metric("📊 Net Worth", f"${net_worth:,.2f}
+#except Exception as e:
+    #st.warning("Could not calculate net worth. Check data format.")
