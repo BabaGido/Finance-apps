@@ -16,7 +16,8 @@ creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 
 # --- Connect to Google Sheets ---
 client = gspread.authorize(creds)
-sheet = client.open("Finance Tracker")
+sheet = client.open_by_key("17tlk2_x8sSFl60JRW8ngfDBxvdTUwmWdusXgLim6Yvw")
+
 # --- Load Data from Each Sheet ---
 def load_sheet_data(sheet, tab_name):
     worksheet = sheet.worksheet(tab_name)
