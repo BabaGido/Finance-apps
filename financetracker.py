@@ -7,7 +7,10 @@ import gspread
 import plotly.express as px
 
 # --- Configuration ---
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"       # ← add this
+]
 SHEET_KEY = "17tlk2_x8sSFl60JRW8ngfDBxvdTUwmWdusXgLim6Yvw"
 
 # ==== DEBUG START ====
