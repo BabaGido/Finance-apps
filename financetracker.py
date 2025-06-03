@@ -18,13 +18,21 @@ creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 client = gspread.authorize(creds)
 sheet = client.open_by_key(SHEET_KEY)
 
+# Debug: list worksheet titles (remove after confirming names)
+worksheet_titles = [ws.title for ws in sheet.worksheets()]
+st.write("Worksheets in Finance Tracker:", worksheet_titles)
+
 # --- Helper to load each tab into a DataFrame ---
 def load_sheet_data(sheet_obj, tab_name):
-    worksheet = sheet_obj.worksheet(tab_name)
-    data = worksheet.get_all_records()
-    return pd.DataFrame(data)
+    try:
+        worksheet = sheet_obj.worksheet(tab_name)
+        data = worksheet.get_all_records()
+        return pd.DataFrame(data)
+    except Exception as e:
+        st.error(f"❌ Could not load tab '{tab_name}': {e}")
+        return pd.DataFrame()
 
-# Load data from Google Sheets
+# Load data from Google Sheets (use exact names you saw above)
 income_df = load_sheet_data(sheet, "Income_Log")
 expense_df = load_sheet_data(sheet, "Expense_Log")
 debts_df = load_sheet_data(sheet, "Debts_Tracker")
@@ -33,7 +41,6 @@ accounts_df = load_sheet_data(sheet, "Accounts")
 
 # --- Page Layout ---
 st.set_page_config(layout="wide", page_title="💰 Finance Tracker")
-
 st.title("💰 Personal Finance Dashboard with Google Sheets")
 
 # --- Income Section ---
@@ -50,40 +57,34 @@ st.bar_chart(monthly_income.set_index("Month"))
 
 # --- Expense Section (manual per-row dropdowns) ---
 st.header("💸 Expense Overview")
-
-# Convert Date to datetime
 expense_df["Date"] = pd.to_datetime(expense_df["Date"])
 
-# If there’s an existing Category column in the sheet, drop it so we start fresh:
+# Drop any existing Category column so we start fresh
 if "Category" in expense_df.columns:
     expense_df = expense_df.drop(columns=["Category"])
 
-# Prepare a blank Category column to fill in:
+# Add blank Category column
 expense_df["Category"] = ""
 
 # Define the fixed list of expense categories:
 expense_categories = ["Fixed", "Variable", "Other"]
 
-# Now, for each row in expense_df, render a selectbox where the user chooses the category:
 st.write("**Assign a category to each expense:**")
 for idx, row in expense_df.iterrows():
-    # Build a label showing Date, Description, and Amount to identify the row
     label = f"{row['Date'].date()} – {row['Description']} ($ {row['Amount']})"
+    widget_key = f"expense_cat_{int(idx)}"  # unique key per row
     choice = st.selectbox(
         label,
         options=[""] + expense_categories,
-        index=0, 
-        key=f"exp_{idx}"
+        key=widget_key
     )
-    # If the user picks a non-empty choice, store it in our DataFrame
     if choice in expense_categories:
         expense_df.at[idx, "Category"] = choice
 
-# After the loop, you have a full expense_df["Category"] column based on user picks
 st.subheader("📊 Your Categorized Expenses")
 st.dataframe(expense_df)
 
-# (Optional) Save back to Google Sheet when user clicks the button
+# (Optional) Save back to Google Sheet when the user clicks the button
 if st.button("Save Expense Categories to Sheet"):
     worksheet = sheet.worksheet("Expense_Log")
     values = [expense_df.columns.to_list()] + expense_df.fillna("").astype(str).values.tolist()
@@ -91,7 +92,7 @@ if st.button("Save Expense Categories to Sheet"):
     worksheet.update(values)
     st.success("✅ Categories saved back to Google Sheet!")
 
-# Next, allow filtering by category as before
+# Filter by chosen category
 category_filter = st.selectbox(
     "Filter Expense by Category",
     options=["All"] + expense_categories
@@ -104,7 +105,7 @@ else:
 st.subheader(f"📊 {category_filter} Expenses")
 st.dataframe(to_show)
 
-# Finally, a pie chart of spending by category (ignoring blank rows)
+# Spending by Category Pie Chart (skip blank rows)
 spend_by_cat = (
     expense_df[expense_df["Category"] != ""]
     .groupby("Category")["Amount"]
