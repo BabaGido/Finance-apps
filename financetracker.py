@@ -64,14 +64,15 @@ expense_df["Category"] = ""
 # Define dropdown options
 expense_categories = ["Fixed", "Variable", "Other"]
 
-# Show data editor
-edited_expense_df = st.data_editor(
+# Use the “experimental” data editor so we can configure a SelectboxColumn for Category
+edited_expense_df = st.experimental_data_editor(
     expense_df,
     column_config={
         "Category": st.column_config.SelectboxColumn(
-            "Category",
-            options=expense_categories,
-            default="Variable",
+            "Category",                # label shown in the table
+            options=expense_categories, 
+            format_func=lambda x: x,   # no formatting needed
+            help="Choose Fixed / Variable / Other"
         )
     },
     hide_index=True,
@@ -81,6 +82,7 @@ edited_expense_df = st.data_editor(
 # Optionally save back to Google Sheet
 if st.button("Save Expense Categories to Sheet"):
     worksheet = sheet.worksheet("Expense_Log")
+    # Build values: header row + all data rows (as strings so gspread can push them)
     values = [edited_expense_df.columns.to_list()] + edited_expense_df.fillna("").astype(str).values.tolist()
     worksheet.clear()
     worksheet.update(values)
@@ -100,7 +102,12 @@ st.subheader(f"📊 {category_filter} Expenses")
 st.dataframe(to_show)
 
 # --- Spending by Category Pie Chart using edited_expense_df ---
-spend_by_cat = edited_expense_df.groupby("Category")["Amount"].sum().reset_index()
+spend_by_cat = (
+    edited_expense_df.groupby("Category")["Amount"]
+    .sum()
+    .reset_index()
+    .sort_values("Amount", ascending=False)
+)
 fig_expense = px.pie(
     spend_by_cat,
     names="Category",
