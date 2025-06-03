@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import json
+import gspread
 from google.oauth2.service_account import Credentials
 import plotly.express as px
 
@@ -13,6 +14,9 @@ SHEET_NAME = "Finance Tracker"
 creds_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
 creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 
+# --- Connect to Google Sheets ---
+client = gspread.authorize(creds)
+sheet = client.open("Finance Tracker")
 # --- Load Data from Each Sheet ---
 def load_sheet_data(sheet, tab_name):
     worksheet = sheet.worksheet(tab_name)
