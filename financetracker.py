@@ -36,7 +36,7 @@ accounts_df = load_sheet_data(sheet, "Accounts")
 
 # --- Streamlit Layout ---
 st.set_page_config(layout="wide", page_title="💰 Finance Tracker")
-st.title("💰 Personal Finance Dashboard with Google Sheets")
+st.title("💰 Personal Finance Dashboard")
 
 # Income Section
 st.header("📥 Income Overview")
