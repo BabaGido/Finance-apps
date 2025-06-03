@@ -12,6 +12,7 @@ SHEET_NAME = "Finance Tracker"
 
 # --- Authenticate and Connect to Google Sheets ---
 creds_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
+st.json(creds_dict)
 creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 
 # --- Connect to Google Sheets ---
