@@ -2,8 +2,8 @@
 import streamlit as st
 import pandas as pd
 import json
-import gspread
 from google.oauth2.service_account import Credentials
+import gspread
 import plotly.express as px
 
 # --- Configuration ---
@@ -12,7 +12,17 @@ SHEET_NAME = "Finance Tracker"
 
 # --- Authenticate and Connect to Google Sheets ---
 creds_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
-st.json(creds_dict)
+# ==== DEBUG START ====
+st.text("─── RAW SECRET ───")
+st.text(creds_json[:200] + ("…" if len(creds_json) > 200 else ""))
+st.text("──────────────────")
+try:
+    creds_dict = json.loads(creds_json)
+    st.success("✅ Valid JSON parsed!")
+except Exception as e:
+    st.error(f"JSON parse failed: {e}")
+    st.stop()
+# ==== DEBUG END ====
 creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 
 # --- Connect to Google Sheets ---
