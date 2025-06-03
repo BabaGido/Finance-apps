@@ -1,18 +1,17 @@
 
 import streamlit as st
 import pandas as pd
-import gspread
+import json
 from google.oauth2.service_account import Credentials
 import plotly.express as px
 
 # --- Configuration ---
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-SERVICE_ACCOUNT_FILE = "Credentials.json"
 SHEET_NAME = "Finance Tracker"
 
 # --- Authenticate and Connect to Google Sheets ---
 creds_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
-creds = Credentials.from_service_account_info(creds_dict, scopes=["https://www.googleapis.com/auth/spreadsheets"])
+creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 
 # --- Load Data from Each Sheet ---
 def load_sheet_data(sheet, tab_name):
