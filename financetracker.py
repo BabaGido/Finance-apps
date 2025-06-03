@@ -8,7 +8,7 @@ import plotly.express as px
 
 # --- Configuration ---
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-SHEET_NAME = "Finance Tracker"
+SHEET_KEY = "17tlk2_x8sSFl60JRW8ngfDBxvdTUwmWdusXgLim6Yvw"
 
 # ==== DEBUG START ====
 # Load the raw secret string and display its first 200 characters
@@ -26,13 +26,21 @@ except Exception as e:
     st.error(f"JSON parse failed: {e}")
     st.stop()
 # ==== DEBUG END ====
+
 # --- Authenticate and Connect to Google Sheets ---
 creds_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
 creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 
 # --- Connect to Google Sheets ---
 client = gspread.authorize(creds)
-sheet = client.open_by_key("17tlk2_x8sSFl60JRW8ngfDBxvdTUwmWdusXgLim6Yvw")
+# ==== DEBUG: List all spreadsheets the service account can open ====
+try:
+    all_sheets = client.openall()
+    st.write("Sheets visible to service account:", [s.title for s in all_sheets])
+except Exception as e:
+    st.error(f"Could not list sheets: {e}")
+# ==== END DEBUG ====
+sheet = client.open_by_key(SHEET_KEY)
 
 # --- Load Data from Each Sheet ---
 def load_sheet_data(sheet, tab_name):
