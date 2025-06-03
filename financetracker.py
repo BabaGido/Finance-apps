@@ -10,12 +10,15 @@ import plotly.express as px
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 SHEET_NAME = "Finance Tracker"
 
-# --- Authenticate and Connect to Google Sheets ---
-creds_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
 # ==== DEBUG START ====
+# Load the raw secret string and display its first 200 characters
+creds_json = st.secrets["GOOGLE_SERVICE_ACCOUNT"]
+
 st.text("─── RAW SECRET ───")
 st.text(creds_json[:200] + ("…" if len(creds_json) > 200 else ""))
 st.text("──────────────────")
+
+# Try parsing it as JSON
 try:
     creds_dict = json.loads(creds_json)
     st.success("✅ Valid JSON parsed!")
@@ -23,6 +26,8 @@ except Exception as e:
     st.error(f"JSON parse failed: {e}")
     st.stop()
 # ==== DEBUG END ====
+# --- Authenticate and Connect to Google Sheets ---
+creds_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
 creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 
 # --- Connect to Google Sheets ---
