@@ -16,28 +16,36 @@ SHEET_KEY = "17tlk2_x8sSFl60JRW8ngfDBxvdTUwmWdusXgLim6Yvw"  # your sheet ID
 creds_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
 creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 client = gspread.authorize(creds)
-sheet = client.open_by_key(SHEET_KEY)
 
-# Debug: list worksheet titles (remove after confirming names)
-worksheet_titles = [ws.title for ws in sheet.worksheets()]
-st.write("Worksheets in Finance Tracker:", worksheet_titles)
+# Try opening once; if it fails, stop
+try:
+    sheet = client.open_by_key(SHEET_KEY)
+except Exception as e:
+    st.error(f"❌ Could not open spreadsheet: {e}")
+    st.stop()
 
-# --- Helper to load each tab into a DataFrame ---
-def load_sheet_data(sheet_obj, tab_name):
+
+# --- Caching wrapper so we don’t re‐hit the API on every rerun ---
+@st.cache_data(ttl=300)
+def load_sheet_data(tab_name: str) -> pd.DataFrame:
+    """
+    Load a single worksheet into a DataFrame, and cache it for 5 minutes.
+    """
     try:
-        worksheet = sheet_obj.worksheet(tab_name)
-        data = worksheet.get_all_records()
+        ws = sheet.worksheet(tab_name)
+        data = ws.get_all_records()
         return pd.DataFrame(data)
     except Exception as e:
         st.error(f"❌ Could not load tab '{tab_name}': {e}")
         return pd.DataFrame()
 
-# Load data from Google Sheets (use exact names you saw above)
-income_df = load_sheet_data(sheet, "Income_Log")
-expense_df = load_sheet_data(sheet, "Expense_Log")
-debts_df = load_sheet_data(sheet, "Debts_Tracker")
-goals_df = load_sheet_data(sheet, "Savings_Goals")
-accounts_df = load_sheet_data(sheet, "Accounts")
+
+# Lo# Load each worksheet once and cache it
+income_df   = load_sheet_data("Income_Log")
+expense_df  = load_sheet_data("Expense_Log")
+debts_df    = load_sheet_data("Debts_Tracker")
+goals_df    = load_sheet_data("Savings_Goals")
+accounts_df = load_sheet_data("Accounts")
 
 # --- Page Layout ---
 st.set_page_config(layout="wide", page_title="💰 Finance Tracker")
