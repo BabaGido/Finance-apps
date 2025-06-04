@@ -180,6 +180,23 @@ if st.button("Save Debt Categories to Sheet"):
     worksheet.clear()
     worksheet.update(values)
     st.success("✅ Debt categories saved back to Google Sheet!")
+    
+# Debt Tracker by Category Pie Chart
+debt_by_cat = (
+    expense_df[expense_df["Category"] != ""]
+    .groupby("Category")["Amount"]
+    .sum()
+    .reset_index()
+    .sort_values("Amount", ascending=False)
+)
+fig_expense = px.pie(
+    debt_by_cat,
+    names="Category",
+    values="Amount",
+    title="Debt by Category",
+    hole=0.4
+)
+st.plotly_chart(fig_expense, use_container_width=True)
 
 # === SAVINGS GOALS SECTION ===
 st.header("🎯 Savings Goals")
