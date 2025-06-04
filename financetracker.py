@@ -89,11 +89,6 @@ monthly_income = income_df.groupby("Month")["Amount"].sum().reset_index()
 st.subheader("📅 Monthly Income Summary")
 st.bar_chart(monthly_income.set_index("Month"))
 
-# --- Monthly Income Bar Chart ---
-income_df["Month"] = income_df["Date"].dt.to_period("M").astype(str)
-monthly_income = income_df.groupby("Month")["Amount"].sum().reset_index()
-st.subheader("📅 Monthly Income Summary")
-st.bar_chart(monthly_income.set_index("Month"))
 
 # --- Expense Section (manual per-row dropdowns) ---
 st.header("💸 Expense Overview")
