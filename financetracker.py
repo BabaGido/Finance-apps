@@ -256,6 +256,23 @@ if st.button("Save Account Categories to Sheet"):
     worksheet.clear()
     worksheet.update(values)
     st.success("✅ Account categories saved back to Google Sheet!")
+# Savings by Categgory
+
+save_by_cat = (
+    goals_df[goals_df["Category"] != ""]
+    .groupby("Category")["Amount"]
+    .sum()
+    .reset_index()
+    .sort_values("Amount", ascending=False)
+)
+fig_savings = px.pie(
+    save_by_cat,
+    names="Category",
+    values="Amount",
+    title="Savings Goals by Category",
+    hole=0.4
+)
+st.plotly_chart(fig_savings, use_container_width=True)
 
 # === NET WORTH CALCULATION ===
 try:
